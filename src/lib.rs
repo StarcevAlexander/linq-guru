@@ -41,13 +41,18 @@ pub trait LinqExt: Iterator + Sized {
         items
     }
 
-    fn order_by_descending<K: Ord>(self, key: impl FnMut(&Self::Item) -> K) -> Vec<Self::Item>
+    fn order_by_descending<K: Ord>(
+        self,
+        mut key: impl FnMut(&Self::Item) -> K,
+    ) -> Vec<Self::Item>
     where
         Self::Item: Clone,
     {
-        let mut sorted = self.order_by(key);
-        sorted.reverse();
-        sorted
+        // Compute each key once, then sort by the key descending.
+        // `sort_by` is stable, so ties keep their source order (as in LINQ).
+        let mut keyed: Vec<(K, Self::Item)> = self.map(|item| (key(&item), item)).collect();
+        keyed.sort_by(|a, b| b.0.cmp(&a.0));
+        keyed.into_iter().map(|(_, item)| item).collect()
     }
 
     fn group_by_linq<K, B>(
@@ -109,8 +114,16 @@ pub trait LinqExt: Iterator + Sized {
         Self::Item: PartialEq + Clone,
     {
         let excluded: Vec<Self::Item> = other.into_iter().collect();
-        self.into_iter()
-            .filter(move |item| !excluded.contains(item))
+        // LINQ semantics: each surviving value is yielded exactly once.
+        let mut seen: Vec<Self::Item> = Vec::new();
+        self.into_iter().filter_map(move |item| {
+            if excluded.contains(&item) || seen.contains(&item) {
+                None
+            } else {
+                seen.push(item.clone());
+                Some(item)
+            }
+        })
     }
 
     fn intersect(self, other: impl IntoIterator<Item = Self::Item>) -> Vec<Self::Item>
@@ -238,5 +251,21 @@ mod tests {
             .where_with_index(|i, v| i > 0 && v > 10)
             .to_list();
         assert_eq!(where_index, vec![20, 30]);
+    }
+
+    #[test]
+    fn except_returns_distinct_items() {
+        // LINQ Except yields each surviving value once.
+        let result = vec![1, 1, 2, 3].into_iter().except(vec![3]).to_list();
+        assert_eq!(result, vec![1, 2]);
+    }
+
+    #[test]
+    fn order_by_descending_is_stable() {
+        // LINQ OrderByDescending is stable: ties keep their source order.
+        let sorted = vec![("a", 1), ("b", 1), ("c", 2)]
+            .into_iter()
+            .order_by_descending(|(_, n)| *n);
+        assert_eq!(sorted, vec![("c", 2), ("a", 1), ("b", 1)]);
     }
 }

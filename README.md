@@ -26,7 +26,7 @@ fn main() {
 
 ## Methods
 
-`where_` · `where_with_index` · `select` · `select_with_index` · `order_by` · `order_by_descending` · `group_by_linq` (preserves encounter order) · `distinct` · `first_or_default` · `last_or_default` · `count_where` · `aggregate` · `to_list` · `except` · `intersect` · `union_all` · `skip_linq` · `take_linq` · `chunk_linq`
+`where_` · `where_with_index` · `select` · `select_with_index` · `order_by` · `order_by_descending` · `group_by_linq` (preserves encounter order) · `distinct` · `first_or_default` · `last_or_default` · `count_where` · `aggregate` · `to_list` · `except` · `intersect` · `union_all` · `union` · `skip_linq` · `take_linq` · `chunk_linq`
 
 Standard `Iterator` methods (`map`, `filter`, `sum`, `any`, `all`, `zip`, `take`, `skip`) remain available — `LinqExt` only adds the LINQ vocabulary on top.
 

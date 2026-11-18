@@ -147,6 +147,13 @@ pub trait LinqExt: Iterator + Sized {
         self.into_iter().chain(other)
     }
 
+    fn union(self, other: impl IntoIterator<Item = Self::Item>) -> impl Iterator<Item = Self::Item>
+    where
+        Self::Item: PartialEq + Clone,
+    {
+        distinct_iter(self.into_iter().chain(other).collect())
+    }
+
     fn skip_linq(self, n: usize) -> impl Iterator<Item = Self::Item> {
         self.skip(n)
     }

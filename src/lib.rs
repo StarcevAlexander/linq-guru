@@ -1,28 +1,35 @@
-use std::collections::HashMap;
-
 pub trait LinqExt: Iterator + Sized {
-    fn where_(self, predicate: impl FnMut(&Self::Item) -> bool) -> Vec<Self::Item> {
-        self.filter(|item| predicate(item)).collect()
+    fn where_(
+        self,
+        mut predicate: impl FnMut(Self::Item) -> bool,
+    ) -> impl Iterator<Item = Self::Item>
+    where
+        Self::Item: Clone,
+    {
+        self.filter(move |item| predicate(item.clone()))
     }
 
     fn where_with_index(
         self,
-        predicate: impl FnMut(usize, &Self::Item) -> bool,
-    ) -> Vec<Self::Item> {
+        mut predicate: impl FnMut(usize, Self::Item) -> bool,
+    ) -> impl Iterator<Item = Self::Item>
+    where
+        Self::Item: Clone,
+    {
         self.enumerate()
-            .filter(|(i, item)| predicate(*i, item))
+            .filter(move |(i, item)| predicate(*i, item.clone()))
             .map(|(_, item)| item)
-            .collect()
     }
 
-    fn select<B>(self, selector: impl FnMut(&Self::Item) -> B) -> Vec<B> {
-        self.map(|item| selector(&item)).collect()
+    fn select<B>(self, selector: impl FnMut(Self::Item) -> B) -> impl Iterator<Item = B> {
+        self.map(selector)
     }
 
-    fn select_with_index<B>(self, selector: impl FnMut(usize, &Self::Item) -> B) -> Vec<B> {
-        self.enumerate()
-            .map(|(i, item)| selector(i, &item))
-            .collect()
+    fn select_with_index<B>(
+        self,
+        mut selector: impl FnMut(usize, Self::Item) -> B,
+    ) -> impl Iterator<Item = B> {
+        self.enumerate().map(move |(i, item)| selector(i, item))
     }
 
     fn order_by<K: Ord>(self, key: impl FnMut(&Self::Item) -> K) -> Vec<Self::Item>
@@ -45,8 +52,8 @@ pub trait LinqExt: Iterator + Sized {
 
     fn group_by_linq<K, B>(
         self,
-        key_selector: impl FnMut(&Self::Item) -> K,
-        value_selector: impl FnMut(&Self::Item) -> B,
+        mut key_selector: impl FnMut(&Self::Item) -> K,
+        mut value_selector: impl FnMut(&Self::Item) -> B,
     ) -> Vec<(K, Vec<B>)>
     where
         K: PartialEq,
@@ -63,20 +70,14 @@ pub trait LinqExt: Iterator + Sized {
         groups
     }
 
-    fn distinct(self) -> Vec<Self::Item>
+    fn distinct(self) -> impl Iterator<Item = Self::Item>
     where
         Self::Item: PartialEq + Clone,
     {
-        let mut out: Vec<Self::Item> = Vec::new();
-        for item in self {
-            if !out.contains(&item) {
-                out.push(item);
-            }
-        }
-        out
+        distinct_iter(self.collect())
     }
 
-    fn first_or_default(self, default: Self::Item) -> Self::Item {
+    fn first_or_default(mut self, default: Self::Item) -> Self::Item {
         self.next().unwrap_or(default)
     }
 
@@ -88,8 +89,11 @@ pub trait LinqExt: Iterator + Sized {
         last
     }
 
-    fn count_where(self, predicate: impl FnMut(&Self::Item) -> bool) -> usize {
-        self.filter(|item| predicate(item)).count()
+    fn count_where(self, mut predicate: impl FnMut(Self::Item) -> bool) -> usize
+    where
+        Self::Item: Clone,
+    {
+        self.filter(move |item| predicate(item.clone())).count()
     }
 
     fn aggregate<A>(self, seed: A, accumulator: impl FnMut(A, Self::Item) -> A) -> A {
@@ -100,14 +104,13 @@ pub trait LinqExt: Iterator + Sized {
         self.collect()
     }
 
-    fn except(self, other: impl IntoIterator<Item = Self::Item>) -> Vec<Self::Item>
+    fn except(self, other: impl IntoIterator<Item = Self::Item>) -> impl Iterator<Item = Self::Item>
     where
         Self::Item: PartialEq + Clone,
     {
         let excluded: Vec<Self::Item> = other.into_iter().collect();
         self.into_iter()
-            .filter(|item| !excluded.contains(item))
-            .collect()
+            .filter(move |item| !excluded.contains(item))
     }
 
     fn intersect(self, other: impl IntoIterator<Item = Self::Item>) -> Vec<Self::Item>
@@ -124,19 +127,19 @@ pub trait LinqExt: Iterator + Sized {
         out
     }
 
-    fn union_all(self, other: impl IntoIterator<Item = Self::Item>) -> Vec<Self::Item>
-    where
-        Self::Item: PartialEq + Clone,
-    {
-        self.into_iter().chain(other).collect()
+    fn union_all(
+        self,
+        other: impl IntoIterator<Item = Self::Item>,
+    ) -> impl Iterator<Item = Self::Item> {
+        self.into_iter().chain(other)
     }
 
-    fn skip_linq(self, n: usize) -> Vec<Self::Item> {
-        self.skip(n).collect()
+    fn skip_linq(self, n: usize) -> impl Iterator<Item = Self::Item> {
+        self.skip(n)
     }
 
-    fn take_linq(self, n: usize) -> Vec<Self::Item> {
-        self.take(n).collect()
+    fn take_linq(self, n: usize) -> impl Iterator<Item = Self::Item> {
+        self.take(n)
     }
 
     fn chunk_linq(self, size: usize) -> Vec<Vec<Self::Item>>
@@ -151,6 +154,18 @@ pub trait LinqExt: Iterator + Sized {
 
 impl<I: Iterator> LinqExt for I {}
 
+fn distinct_iter<T: PartialEq + Clone>(items: Vec<T>) -> impl Iterator<Item = T> {
+    let mut seen: Vec<T> = Vec::new();
+    items.into_iter().filter(move |item| {
+        if seen.contains(item) {
+            false
+        } else {
+            seen.push(item.clone());
+            true
+        }
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -160,7 +175,8 @@ mod tests {
         let result = vec![1, 2, 3, 4, 5]
             .into_iter()
             .where_(|n| n % 2 == 0)
-            .select(|n| n * 10);
+            .select(|n| n * 10)
+            .to_list();
         assert_eq!(result, vec![20, 40]);
     }
 
@@ -190,13 +206,13 @@ mod tests {
     fn set_operations() {
         let except = vec![1, 2, 3].into_iter().except(vec![2]).to_list();
         assert_eq!(except, vec![1, 3]);
-        let intersect = vec![1, 2, 3].into_iter().intersect(vec![2, 3, 4]).to_list();
+        let intersect = vec![1, 2, 3].into_iter().intersect(vec![2, 3, 4]);
         assert_eq!(intersect, vec![2, 3]);
         let union = vec![1].into_iter().union_all(vec![1, 2]).to_list();
         assert_eq!(union, vec![1, 1, 2]);
         let distinct = vec![1, 1, 2].into_iter().distinct().to_list();
         assert_eq!(distinct, vec![1, 2]);
-        let chunked = vec![1, 2, 3, 4].into_iter().chunk_linq(2).to_list();
+        let chunked = vec![1, 2, 3, 4].into_iter().chunk_linq(2);
         assert_eq!(chunked, vec![vec![1, 2], vec![3, 4]]);
         let count = vec![1, 2, 3, 4].into_iter().count_where(|n| n > 2);
         assert_eq!(count, 2);
@@ -219,7 +235,7 @@ mod tests {
         assert_eq!(with_index, vec!["0:10", "1:20"]);
         let where_index = vec![10, 20, 30]
             .into_iter()
-            .where_with_index(|i, v| i > 0 && *v > 10)
+            .where_with_index(|i, v| i > 0 && v > 10)
             .to_list();
         assert_eq!(where_index, vec![20, 30]);
     }

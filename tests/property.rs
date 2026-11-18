@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
-use proptest::prelude::*;
 use linqguru::LinqExt;
+use proptest::prelude::*;
 
 fn small_vec() -> impl Strategy<Value = Vec<i32>> {
     proptest::collection::vec(-8i32..=8, 0..40)
@@ -13,11 +13,7 @@ fn keyed_vec() -> impl Strategy<Value = Vec<(i32, u16)>> {
 
 fn first_occurrences(input: &[i32]) -> Vec<i32> {
     let mut seen = HashSet::new();
-    input
-        .iter()
-        .filter(|v| seen.insert(**v))
-        .copied()
-        .collect()
+    input.iter().filter(|v| seen.insert(**v)).copied().collect()
 }
 
 proptest! {

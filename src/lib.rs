@@ -41,10 +41,7 @@ pub trait LinqExt: Iterator + Sized {
         items
     }
 
-    fn order_by_descending<K: Ord>(
-        self,
-        mut key: impl FnMut(&Self::Item) -> K,
-    ) -> Vec<Self::Item>
+    fn order_by_descending<K: Ord>(self, mut key: impl FnMut(&Self::Item) -> K) -> Vec<Self::Item>
     where
         Self::Item: Clone,
     {

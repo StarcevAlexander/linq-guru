@@ -2,7 +2,7 @@
 name = "linqguru"
 version = "0.1.1"
 edition = "2024"
-description = "LINQ-style query methods for Rust iterators - where, select, order_by, group_by, aggregate and 20 more C#-named extension methods"
+description = "DEPRECATED: renamed to linq-guru - use that crate instead"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/StarcevAlexander/linqguru"
 homepage = "https://github.com/StarcevAlexander/linqguru"

@@ -1,3 +1,5 @@
+> **DEPRECATED:** this crate has been renamed to [`linq-guru`](https://crates.io/crates/linq-guru). New code should depend on `linq-guru`.
+
 # linqguru
 
 **LINQ-style query methods for Rust iterators** — 20 C#-named extension methods over any `Iterator`: `where_`, `select`, `order_by`, `group_by_linq`, `aggregate`, `chunk_linq` and more. Zero dependencies.

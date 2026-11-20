@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use linqguru::LinqExt;
+use linq_guru::LinqExt;
 use proptest::prelude::*;
 
 fn small_vec() -> impl Strategy<Value = Vec<i32>> {

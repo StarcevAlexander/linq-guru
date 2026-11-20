@@ -1,11 +1,11 @@
 [package]
-name = "linqguru"
-version = "0.1.1"
+name = "linq-guru"
+version = "0.1.0"
 edition = "2024"
-description = "DEPRECATED: renamed to linq-guru - use that crate instead"
+description = "LINQ-style query methods for Rust iterators - where, select, order_by, group_by, aggregate and 20 more C#-named extension methods"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/StarcevAlexander/linqguru"
-homepage = "https://github.com/StarcevAlexander/linqguru"
+repository = "https://github.com/StarcevAlexander/linq-guru"
+homepage = "https://github.com/StarcevAlexander/linq-guru"
 readme = "README.md"
 keywords = ["linq", "iterators", "csharp", "query", "collections"]
 categories = ["rust-patterns"]

@@ -1,15 +1,15 @@
-> **DEPRECATED:** this crate has been renamed to [`linq-guru`](https://crates.io/crates/linq-guru). New code should depend on `linq-guru`.
-
-# linqguru
+# linq-guru
 
 **LINQ-style query methods for Rust iterators** — 20 C#-named extension methods over any `Iterator`: `where_`, `select`, `order_by`, `group_by_linq`, `aggregate`, `chunk_linq` and more. Zero dependencies.
+
+Formerly published on crates.io as `linqguru`.
 
 For C# developers who miss LINQ vocabulary when writing Rust, and for anyone who prefers a fluent query pipeline over nested `filter().map().collect()` incantations.
 
 ## Usage
 
 ```rust
-use linqguru::LinqExt;
+use linq_guru::LinqExt;
 
 fn main() {
     let result = vec![1, 2, 3, 4, 5]
